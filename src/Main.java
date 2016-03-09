@@ -8,13 +8,18 @@ public class Main {
 
     public static void main(String[] args)
     {
+        ArrayList<WordCount> wordList = new ArrayList<WordCount>();
+        ArrayList wordValue = new ArrayList();
+
+        long startTimte =  System.currentTimeMillis();
         //Read file
         FileReader reader = null;
-        String filePath = "/Users/deepdoradla/Documents/Cloudwick/SearchText/plainText.txt/";
+        String filePath = "/Users/deepdoradla/Documents/Cloudwick/WordFrequency/plainText.txt/";
         String wordFreqFilePath = "/Users/deepdoradla/Documents/Cloudwick/WordFrequency/wordFrequency.csv";
         String wordTopTenFilePath = "/Users/deepdoradla/Documents/Cloudwick/WordFrequency/top10.csv";
         String line;
         HashMap<String, Integer> hashMap = new HashMap<String, Integer>();
+
 
         try {
             reader = new FileReader(filePath);
@@ -24,39 +29,62 @@ public class Main {
                 while((line = bufferedReader.readLine()) != null)
                 {
 
-                    String[] strArr = line.split(" ");
+                    String[] strArr = line.split("[^a-zA-Z]");
                     int strLength = strArr.length;
                     for(int i=0; i<strLength; i++)
                     {
                         int frequencyVal = 0;
                         int newFrequencyVal = 0;
 
-                        if(hashMap.containsKey(strArr[i]))
-                        {
-                            frequencyVal = (int) hashMap.get(strArr[i]);
-                            newFrequencyVal = frequencyVal+1;
-                            hashMap.put(strArr[i], newFrequencyVal);
-                        }else
-                            hashMap.put(strArr[i],1);
+                        int val = 0;
+                        int newVal = 0;
+                        //Check if word already exists
+                        //Boolean wordExists = checkWordExists(strArr[i], wordList);
+
+
+                        for (String str : strArr) {
+
+                            int frequency = 0;
+
+                            for(WordCount word : wordList){
+                                if(word.str.equals(str)){
+                                    word.wordCount++;
+                                    frequency = 1;
+                                    break;
+                                }
+
+                            }
+
+                            if(frequency == 0)
+                                wordList.add(new WordCount(str, 1));
+
+                        }//End of inner for
+
+
                     }
+
+
+
+                }// End of while loop
+
+
+                Collections.sort(wordList);
+
+
+
+                for(int k = 0; k < 10; k++){
+                    WordCount wordCount = wordList.get(k);
+
+                    System.out.println(wordCount.str + " : " +wordCount.wordCount);
+
                 }
 
-                //This prints all the words and their frequency numbers. All the words are unique except for case sensitivity
-                //System.out.println(hashMap);
 
-                Map<String, Integer> treeMap = new TreeMap<String, Integer>(hashMap);
-                writeMap(hashMap, wordFreqFilePath);
+                long endTime = System.currentTimeMillis();
 
-                //Now sort the map by value and get top 10 results
-                ArrayList<Map.Entry<String, Integer>> sortedList = sortByValye(hashMap);
+                long finalTime = endTime - startTimte;
 
-                Map.Entry<String, Integer> entry;
-                HashMap<String, Integer> sortedMap = new HashMap<String, Integer>();
-                for (int i = 0; i < Math.min(10,sortedList.size()); i++) {
-                    entry = sortedList.get(i);
-                    sortedMap.put(entry.getKey(), entry.getValue());
-                }
-                writeMap(sortedMap, wordTopTenFilePath);
+                System.out.print("time is" + finalTime );
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -66,18 +94,17 @@ public class Main {
         }
     }
 
-    static <K, V extends Comparable<? super V>> ArrayList<Map.Entry<K, V>> sortByValye(Map<K, V> map) {
-        ArrayList<Map.Entry<K, V>> sortedEntries = new ArrayList<Map.Entry<K, V>>(map.entrySet());
-        Collections.sort(sortedEntries, new Comparator<Map.Entry<K, V>>() {
-            @Override
-            public int compare(Map.Entry<K, V> e1, Map.Entry<K, V> e2) {
-                return e2.getValue().compareTo(e1.getValue());
-            }
-        });
-        return sortedEntries;
+
+    public static Boolean checkWordExists(String string, ArrayList wordList)
+    {
+        for(int i=0; i<wordList.size(); i++)
+        {
+            if(wordList.get(i).equals(string))
+                return true;
+        }
+
+        return false;
     }
-
-
 
     private static void writeMap(Map<String,Integer> map, String filePath)
     {
@@ -89,15 +116,45 @@ public class Main {
 
             for(String string : map.keySet())
             {
-                writer.printf("%s, %d\n",string, map.get(string), ",");
+                writer.printf("%s, %d\n",string, map.get(string));
             }
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            writer.flush();
-            writer.close();
+            if(writer != null)
+            {
+                writer.flush();
+                writer.close();
+            }
+
         }
 
 
+    }
+
+    private static class WordCount implements Comparable<WordCount>{
+        String str;
+        int wordCount;
+        public WordCount() {
+        }
+
+        public WordCount(String word, int count){
+            this.str = word;
+            this.wordCount = count;
+        }
+        @Override
+        public int hashCode(){
+            return str.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj){
+            return str.equals(((WordCount)obj).str);
+        }
+
+        @Override
+        public int compareTo(WordCount word){
+            return word.wordCount - wordCount;
+        }
     }
 }
